@@ -1,3 +1,16 @@
+## 1.9.0
+
+### Changed — the VS Code scripting API's todos are the shared todo model
+
+Resolves `tom_vscode_scripting_api` 2.0.0 (`>=2.0.0`), whose todo API speaks
+`TomTodo` from `tom_todo_model`, and `tom_vscode_scripting_api_bridges` is
+regenerated for it. A script that used `TodoItem`, `TodoStatus`,
+`TodoPriority`, `TodoScope` or `TodoReference` now uses `TomTodo`,
+`TomTodoStatus`, `TomTodoPriority`, `TomTodoScope` and `TomTodoReference`;
+reads answer `TodoEntry` (`.todo`, `.sourceFile`, `.level`) and lists
+`TodoListResult` (`.todos`, `.entries`, `.invalid`). The scripting API's
+CHANGELOG has the details.
+
 ## 1.8.5
 
 ### Changed — resolves the web int fix release (dfin9)

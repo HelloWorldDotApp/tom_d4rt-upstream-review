@@ -1,6 +1,6 @@
 name: tom_d4rt_dcli
 description: Base D4rt CLI with dcli bridges. Extensible foundation for D4rt tools.
-version: 1.7.2
+version: 1.8.0
 repository: https://github.com/al-the-bear/tom_d4rt
 homepage: https://github.com/al-the-bear/tom_d4rt/tree/main/tom_d4rt_dcli
 topics:
@@ -38,7 +38,7 @@ dependencies:
   tom_d4rt: "^1.77.0"
 
   # VS Code scripting API (for bridge support)
-  tom_vscode_scripting_api: ">=1.1.0"
+  tom_vscode_scripting_api: ">=2.0.0"
 
   # Chat tools for Telegram integration
   tom_chattools: ">=1.0.2"
