@@ -87,6 +87,12 @@ is the navigation hub for the bridging mechanism docs (categories A–D).
 | --- | --- | --- |
 | [`tom_d4rt_dcli`](tom_d4rt_dcli/README.md) | A Dart-flavoured shell REPL on the source-based interpreter, with DCli shell bridges, multiline input, history, replay files, and bot mode. Supports shebang launchers (`#!/usr/bin/env dcli`) and piped scripts. | `dcli` |
 
+### Hosting in an application
+
+| Package | What it is |
+| --- | --- |
+| [`tom_d4rt_host`](tom_d4rt_host/README.md) | Running scripts inside an application: a resident worker isolate that serves runs one at a time, one interpreter per set of registered bridges, a parsed-program cache keyed by source hash, a deadline and a cancellation that kill a runaway, the application's own message channel, and a bounded transcript of what a run printed. |
+
 ### Flutter integration (source-based)
 
 | Package | What it is |

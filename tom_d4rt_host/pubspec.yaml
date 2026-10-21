@@ -1,0 +1,28 @@
+name: tom_d4rt_host
+description: >-
+  Hosting the D4rt interpreter in an application: a resident worker isolate
+  that serves runs one at a time, one interpreter per set of registered
+  bridges, a parsed-program cache keyed by source hash, a deadline and a
+  cancellation that kill a runaway, and a bounded transcript of what a run
+  printed. The application keeps its bridges and its own message channel.
+version: 0.1.0
+publish_to: none
+repository: https://github.com/al-the-bear/tom_d4rt
+homepage: https://github.com/al-the-bear/tom_d4rt/tree/main/tom_d4rt_host
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  # The interpreter, resolved from pub.dev like every package of this
+  # repository: consumers that also take `tom_d4rt_dcli` take `tom_d4rt` from
+  # pub.dev, and pub refuses one package from both a path and pub.dev.
+  tom_d4rt: ^1.226.0
+  # The output transcript and the cancellation token.
+  tom_basics:
+    path: ../../basics/tom_basics
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
+  yaml: ^3.1.0
