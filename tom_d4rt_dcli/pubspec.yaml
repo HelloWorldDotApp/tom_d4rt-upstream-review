@@ -38,7 +38,9 @@ dependencies:
   tom_d4rt: "^1.77.0"
 
   # VS Code scripting API (for bridge support)
-  tom_vscode_scripting_api: ">=2.0.0"
+  tom_vscode_scripting_api: ^2.0.0
+  # The generated scripting-API bridges import the todo model directly.
+  tom_todo_model: ^1.0.1
 
   # Chat tools for Telegram integration
   tom_chattools: ">=1.0.2"
