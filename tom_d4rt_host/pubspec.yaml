@@ -19,8 +19,7 @@ dependencies:
   # pub.dev, and pub refuses one package from both a path and pub.dev.
   tom_d4rt: ^1.226.0
   # The output transcript and the cancellation token.
-  tom_basics:
-    path: ../../basics/tom_basics
+  tom_basics: ">=3.3.0"
 
 dev_dependencies:
   lints: ^6.0.0
