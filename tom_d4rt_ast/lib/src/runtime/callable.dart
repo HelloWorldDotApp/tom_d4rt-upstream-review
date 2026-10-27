@@ -2142,6 +2142,11 @@ class InterpretedFunction implements Callable {
                   bodyToExecute.block!.statements,
                   executionEnvironment,
                 );
+                // 块体自然落底不返回最后一条语句的值；显式 return 由异常分支处理。
+                // 保留暂停请求，让既有异步恢复路径继续接管执行。
+                if (syncResult is! AsyncSuspensionRequest) {
+                  syncResult = null;
+                }
               } else if (bodyToExecute is SExpressionFunctionBody) {
                 visitor.environment = executionEnvironment;
                 syncResult = bodyToExecute.expression!.accept<Object?>(visitor);
@@ -3842,14 +3847,19 @@ class InterpretedFunction implements Callable {
       currentState.isHandlingErrorForRethrow = false;
       currentState.originalErrorForRethrow = null;
 
-      Object? finalCompletionValue = lastResult;
-      if (lastResult == null && currentState.lastAwaitResult != null) {
-        finalCompletionValue = currentState.lastAwaitResult;
-        Logger.debug(
-          " [StateMachine] Loop finished after await. Using await result for completion: $finalCompletionValue",
-        );
+      // 异步块体自然落底完成为 null；表达式体继续保留其完成值。
+      if (currentState.function._body is SBlockFunctionBody) {
+        currentState.completer.complete(null);
+      } else {
+        Object? finalCompletionValue = lastResult;
+        if (lastResult == null && currentState.lastAwaitResult != null) {
+          finalCompletionValue = currentState.lastAwaitResult;
+          Logger.debug(
+            " [StateMachine] Loop finished after await. Using await result for completion: $finalCompletionValue",
+          );
+        }
+        currentState.completer.complete(finalCompletionValue);
       }
-      currentState.completer.complete(finalCompletionValue);
     }
   }
 

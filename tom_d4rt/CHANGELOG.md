@@ -1,3 +1,7 @@
+## 2026-10-27（未发布）
+
+- fix: 修正同步与异步块函数自然落底泄漏末尾表达式值或 Future 的行为；保留显式 return、表达式体及构造器语义，并补充定向回归测试。
+
 ## 1.229.0
 
 ### Fixed — integers are typed `int`, not `double`, on the web (dfin8)
