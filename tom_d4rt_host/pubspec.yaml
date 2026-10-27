@@ -6,7 +6,6 @@ description: >-
   cancellation that kill a runaway, and a bounded transcript of what a run
   printed. The application keeps its bridges and its own message channel.
 version: 0.1.0
-publish_to: none
 repository: https://github.com/al-the-bear/tom_d4rt
 homepage: https://github.com/al-the-bear/tom_d4rt/tree/main/tom_d4rt_host
 
@@ -19,7 +18,7 @@ dependencies:
   # pub.dev, and pub refuses one package from both a path and pub.dev.
   tom_d4rt: ^1.226.0
   # The output transcript and the cancellation token.
-  tom_basics: ">=3.3.0"
+  tom_basics: ^3.3.0
 
 dev_dependencies:
   lints: ^6.0.0

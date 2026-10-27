@@ -1,5 +1,7 @@
 # tom_d4rt_host
 
+Published on pub.dev as [`tom_d4rt_host` 0.1.0](https://pub.dev/packages/tom_d4rt_host).
+
 Running D4rt scripts inside an application. A `D4rtHost` owns one **resident**
 worker isolate and serves runs one at a time; the application supplies its
 bridges, the per-run state they read and its own message channel, and gets back
