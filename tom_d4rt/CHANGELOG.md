@@ -1,3 +1,7 @@
+## 2026-10-27（未发布）
+
+- fix: 沿父类、混入和接口声明图识别间接桥接类型，以原生类型身份拒绝同名假桥；补充原生对照、参数绑定及循环图回归。
+
 ## 1.229.0
 
 ### Fixed — integers are typed `int`, not `double`, on the web (dfin8)

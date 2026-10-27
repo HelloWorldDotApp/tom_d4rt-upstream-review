@@ -1149,9 +1149,8 @@ class InterpretedClass implements Callable, RuntimeType {
     return concreteMembers;
   }
 
-  /// Checks if this class is a subtype of the [other] class.
-  /// This considers inheritance (extends), mixin application (with),
-  /// interface implementation (implements), and bridged superclass chains.
+  /// 核验继承、混入及接口类型关系；桥接目标按完整声明图与原生身份判定。
+  /// 对桥接目标的共享祖先和异常循环按解释类对象身份去重。
   @override
   bool isSubtypeOf(RuntimeType other, {Object? value}) {
     if (other is InterpretedClass) {
@@ -1184,41 +1183,30 @@ class InterpretedClass implements Callable, RuntimeType {
       return false;
     }
 
-    // RC-7: Check bridged superclass chain when comparing against a BridgedClass.
-    // An interpreted class extending a bridged class (e.g., MyWidget extends
-    // StatelessWidget) must be recognized as a subtype of Widget, etc.
+    // 桥接目标必须沿完整声明图检查，包括间接接口、父类及混入的接口。
+    // 使用身份集合处理共享祖先和异常循环；不能把同名的另一原生桥当作目标。
     if (other is BridgedClass) {
-      // Walk up the interpreted superclass chain checking bridged superclasses
-      InterpretedClass? current = this;
-      while (current != null) {
-        final bridgedSuper = current.bridgedSuperclass;
-        if (bridgedSuper != null) {
-          // Check if the bridged superclass matches or is a subtype of other
-          if (bridgedSuper.name == other.name) return true;
-          if (bridgedSuper.isSubtypeOf(other)) return true;
-        }
+      final pending = <InterpretedClass>[this];
+      final visited = Set<InterpretedClass>.identity();
+      while (pending.isNotEmpty) {
+        final current = pending.removeLast();
+        if (!visited.add(current)) continue;
 
-        // Also check bridged mixins at each level
+        final bridgedSuper = current.bridgedSuperclass;
+        if (bridgedSuper != null && bridgedSuper.isSubtypeOf(other)) {
+          return true;
+        }
         for (final bridgedMixin in current.bridgedMixins) {
-          if (bridgedMixin.name == other.name) return true;
           if (bridgedMixin.isSubtypeOf(other)) return true;
         }
-
-        // SC6: and bridged interfaces. `class D implements StreamTransformer`
-        // records the bridge in `bridgedInterfaces`, but this walk only ever
-        // looked at `extends` and `with`, so `D() is StreamTransformer` was
-        // false. `implements` is as much a subtype edge as `extends`.
         for (final bridgedInterface in current.bridgedInterfaces) {
-          if (bridgedInterface.name == other.name) return true;
           if (bridgedInterface.isSubtypeOf(other)) return true;
         }
 
-        current = current.superclass;
-      }
-
-      // Check interpreted mixins' bridged superclass chains
-      for (final mixin in mixins) {
-        if (mixin.isSubtypeOf(other)) return true;
+        final parent = current.superclass;
+        if (parent != null) pending.add(parent);
+        pending.addAll(current.mixins);
+        pending.addAll(current.interfaces);
       }
     }
 

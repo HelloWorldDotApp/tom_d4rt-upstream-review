@@ -1,3 +1,7 @@
+## 2026-10-27（未发布）
+
+- fix: 与 source 同步修复间接桥接类型图及同名假桥误判，补充官方 AST 转换、参数绑定和循环图回归；测试依赖显式声明 analyzer 与 tom_ast_generator。
+
 ## 0.210.0
 
 ### Added — a browser test (dfin8)
