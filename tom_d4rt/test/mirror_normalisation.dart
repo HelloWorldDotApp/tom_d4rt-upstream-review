@@ -174,11 +174,8 @@ List<String> normaliseAccessorVocabulary(List<String> tokens) {
   );
 }
 
-/// Every `.dart` file under [root], relative to it and sorted, skipping any
-/// whose relative path starts with [excludedPrefix].
-///
-/// The empty list when [root] is absent — same contract as [mirrorTypeNames],
-/// and the same requirement on callers to hold a size floor over the result.
+/// 枚举根目录下的 Dart 文件，先将相对路径统一为斜杠，再按前缀过滤并排序。
+/// 根目录不存在时返回空列表；调用方仍须核验最少文件数以防静默漏检。
 List<String> dartFilesUnder(String root, {String excludedPrefix = ''}) {
   final dir = Directory(root);
   if (!dir.existsSync()) return const [];
@@ -186,7 +183,7 @@ List<String> dartFilesUnder(String root, {String excludedPrefix = ''}) {
       .listSync(recursive: true)
       .whereType<File>()
       .where((f) => f.path.endsWith('.dart'))
-      .map((f) => f.path.substring(root.length + 1))
+      .map((f) => f.path.substring(root.length + 1).replaceAll(r'\', '/'))
       .where((rel) => excludedPrefix.isEmpty || !rel.startsWith(excludedPrefix))
       .toList()
     ..sort();

@@ -10698,6 +10698,14 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
     }
   }
 
+  /// 只查找实际类型声明并保留前缀，不使用 dynamic/Record 等类型标注占位。
+  Object? _lookupRelationshipType(SNamedType node) {
+    final name = node.name!.name;
+    final prefix = node.importPrefix?.name;
+    return environment.get(prefix == null ? name : '$prefix.$name');
+  }
+
+  /// 完成类声明，保留继承、接口及混入类型的导入前缀并校验约束。
   @override
   Object? visitClassDeclaration(SClassDeclaration node) {
     final className = node.name!.name;
@@ -10737,7 +10745,9 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
       );
       Object? potentialSuperclass;
       try {
-        potentialSuperclass = environment.get(superclassName);
+        potentialSuperclass = _lookupRelationshipType(
+          node.extendsClause!.superclass!,
+        );
       } on RuntimeD4rtException {
         throw RuntimeD4rtException(
           "Superclass '$superclassName' not found for class '$className'. Ensure it's defined.",
@@ -10811,7 +10821,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
           "[Visitor.visitClassDeclaration]   Trying to get interface '$interfaceName' from env: ${environment.hashCode}",
         );
         try {
-          final potentialInterface = environment.get(interfaceName);
+          final potentialInterface = _lookupRelationshipType(interfaceType);
           if (potentialInterface is InterpretedClass) {
             // Add checks for base modifier only
             // Note: sealed classes CAN be implemented within the same library/file
@@ -10859,7 +10869,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
 
         Object? mixin;
         try {
-          mixin = environment.get(mixinName);
+          mixin = _lookupRelationshipType(mixinType);
         } on RuntimeD4rtException {
           throw RuntimeD4rtException(
             "Mixin '$mixinName' not found during lookup for class '$className'. Ensure it's defined (as a mixin or class mixin).",
@@ -11166,6 +11176,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
   }
 
   // Visit Mixin Declaration (Adjusted for Two-Pass)
+  /// 完成混入声明，按完整类型名解析 on 约束与实现接口。
   @override
   Object? visitMixinDeclaration(SMixinDeclaration node) {
     final mixinName = node.name!.name;
@@ -11196,7 +11207,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
       for (final typeNode in node.onClause!.superclassConstraints) {
         final typeName = typeNode.name!.name;
         try {
-          final potentialType = environment.get(typeName);
+          final potentialType = _lookupRelationshipType(typeNode);
           if (potentialType is InterpretedClass ||
               potentialType is BridgedClass) {
             // RC-7b: Accept both InterpretedClass and BridgedClass as valid
@@ -11232,7 +11243,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
       for (final interfaceType in node.implementsClause!.interfaces) {
         final interfaceName = interfaceType.name!.name;
         try {
-          final potentialInterface = environment.get(interfaceName);
+          final potentialInterface = _lookupRelationshipType(interfaceType);
           if (potentialInterface is InterpretedClass) {
             if (potentialInterface.isBase) {
               throw RuntimeD4rtException(
@@ -11329,6 +11340,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
     return null; // Mixin declaration doesn't return a value
   }
 
+  /// 完成枚举声明，按完整类型名解析混入并装配成员和值。
   @override
   Object? visitEnumDeclaration(SEnumDeclaration node) {
     final enumName = node.name!.name;
@@ -11363,7 +11375,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
 
         Object? mixin;
         try {
-          mixin = environment.get(mixinName);
+          mixin = _lookupRelationshipType(mixinType);
         } on RuntimeD4rtException {
           throw RuntimeD4rtException(
             "Mixin '$mixinName' not found during lookup for enum '$enumName'. Ensure it's defined (as a mixin or class mixin).",
@@ -15528,6 +15540,7 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
     return null; // The super() call itself doesn't return a value.
   }
 
+  /// 加载导入并应用可见性；前缀仅绑定导出面，失败保留来源上下文。
   @override
   Object? visitImportDirective(SImportDirective node) {
     final importUriString = (node.uri as SSimpleStringLiteral?)?.value;
@@ -15632,16 +15645,11 @@ class InterpreterVisitor extends GeneralizingSAstVisitor<Object?> {
         "[visitImportDirective] Importation du module '${resolvedUri.toString()}' avec le préfixe '$prefixName'. Show: $showNames, Hide: $hideNames",
       );
 
-      Environment envForPrefix;
-      if (showNames != null || hideNames != null) {
-        // Apply show/hide to the exported environment of the loaded module BEFORE defining it for the prefix
-        envForPrefix = loadedModule.exportedEnvironment.shallowCopyFiltered(
-          showNames: showNames,
-          hideNames: hideNames,
-        );
-      } else {
-        envForPrefix = loadedModule.exportedEnvironment;
-      }
+      // 前缀只公开模块导出面；无 show/hide 时也不能泄漏其词法父环境。
+      final envForPrefix = loadedModule.exportedEnvironment.shallowCopyFiltered(
+        showNames: showNames,
+        hideNames: hideNames,
+      );
       environment.definePrefixedImport(prefixName, envForPrefix);
     } else {
       Logger.debug(

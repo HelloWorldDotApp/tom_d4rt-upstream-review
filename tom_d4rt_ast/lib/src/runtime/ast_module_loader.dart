@@ -11,6 +11,8 @@ import 'package:tom_d4rt_ast/src/runtime/module_context.dart';
 import 'package:tom_d4rt_ast/src/runtime/node_source.dart';
 import 'package:tom_d4rt_ast/src/runtime/stdlib/collection.dart';
 import 'package:tom_d4rt_ast/src/runtime/stdlib/convert.dart';
+import 'package:tom_d4rt_ast/src/runtime/stdlib/core.dart' show CoreStdlib;
+import 'package:tom_d4rt_ast/src/runtime/stdlib/async.dart' show AsyncStdlib;
 import 'package:tom_d4rt_ast/src/runtime/stdlib/isolate.dart';
 import 'package:tom_d4rt_ast/src/runtime/stdlib/math.dart';
 import 'package:tom_d4rt_ast/src/runtime/stdlib/stdlib_io.dart'
@@ -409,23 +411,22 @@ class AstModuleLoader implements ModuleContext {
   /// (e.g. `ByteData` through `flutter/services.dart`) is handled by the
   /// GEN-107 re-export merge in [_mergeReExports], not by global leakage.
   ///
-  /// `dart:core` and `dart:async` keep `null` registrars in
-  /// [_stdlibRegistrars] — they are pre-registered into [globalEnvironment]
-  /// at runner construction (because they are unconditional ambient names
-  /// in Dart) and therefore stay shared.
+  /// core/async 的隐式注册仍共享预热环境；显式导入在 loader 中单独注册导出面。
   final Map<String, Environment> _stdlibEnvironments = {};
 
-  /// Loads a `dart:*` stdlib module by registering its definitions.
-  ///
-  /// Returns `null` if the library is not a known stdlib and has no bridged
-  /// content, allowing the caller to check bundle modules or throw an error.
+  /// 为显式标准库导入构造独立导出面；未知桥库返回 null，其余未知库拒绝。
+  /// core/async 仍有隐式预热环境，但显式前缀不能借此访问脚本全局。
   LoadedModule? _loadStdlibModule(Uri uri) {
     final libName = uri.path;
     final uriString = uri.toString();
 
     // Check if it's a known stdlib
     if (_stdlibRegistrars.containsKey(libName)) {
-      final registrar = _stdlibRegistrars[libName];
+      final registrar = switch (libName) {
+        'core' => CoreStdlib.register,
+        'async' => AsyncStdlib.register,
+        _ => _stdlibRegistrars[libName],
+      };
 
       // GEN-107 Phase 3: every stdlib with an explicit registrar is
       // isolated. The math-only band-aid is gone — re-export merging now
@@ -463,18 +464,7 @@ class AstModuleLoader implements ModuleContext {
         return module;
       }
 
-      // dart:core / dart:async: registrar is null because they are
-      // pre-registered into globalEnvironment at runner construction.
-      // They stay shared so unprefixed names like `Object`, `String`,
-      // `Future`, `Stream` resolve without an explicit import.
-      final emptyAst = SCompilationUnit(offset: 0, length: 0);
-      final module = LoadedModule(
-        ast: emptyAst,
-        exportedEnvironment: globalEnvironment,
-        uri: uri,
-      );
-      _moduleCache[uri] = module;
-      return module;
+      throw StateError('No stdlib registrar for $uriString');
     }
 
     // Not a known stdlib — check if there are bridges registered for this dart: URI

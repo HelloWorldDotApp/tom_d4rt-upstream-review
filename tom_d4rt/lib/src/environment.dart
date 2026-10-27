@@ -2514,15 +2514,9 @@ class Environment {
     return common;
   }
 
-  /// Creates a shallow copy of this environment, optionally filtering symbols.
-  ///
-  /// If [showNames] is provided, only symbols (values, bridged classes, enums, prefixed imports)
-  /// whose names are in [showNames] will be included in the new environment.
-  /// If [hideNames] is provided, all symbols will be included *except* those
-  /// whose names are in [hideNames].
-  ///
-  /// It is an error to provide both [showNames] and [hideNames].
-  /// Unnamed extensions are always copied.
+  /// 复制导入或导出面，按 show/hide 过滤名称；不能同时指定两种过滤条件。
+  /// 不继承词法父环境，避免隐藏或缺失名称回退；类与函数保留原对象和闭包。
+  /// 既有扩展复制规则保持，本方法只隔离导出面的名称查找。
   Environment shallowCopyFiltered({
     Set<String>? showNames,
     Set<String>? hideNames,
@@ -2533,7 +2527,7 @@ class Environment {
       );
     }
 
-    final newEnv = Environment(enclosing: _enclosing);
+    final newEnv = Environment();
 
     // Filter _values
     _values.forEach((name, value) {

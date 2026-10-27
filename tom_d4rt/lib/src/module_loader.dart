@@ -5,6 +5,8 @@ import 'package:tom_d4rt/d4rt.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:tom_d4rt/src/stdlib/convert.dart';
+import 'package:tom_d4rt/src/stdlib/core.dart' show CoreStdlib;
+import 'package:tom_d4rt/src/stdlib/async.dart' show AsyncStdlib;
 import 'package:tom_d4rt/src/stdlib/isolate.dart';
 import 'package:tom_d4rt/src/stdlib/math.dart';
 import 'package:tom_d4rt/src/stdlib/collection.dart';
@@ -158,8 +160,7 @@ class ModuleLoader {
   /// miss). Lets [D4rt] count builds for the cache-reuse regression test.
   final void Function()? onBridgedModuleEnvBuilt;
 
-  // GEN-100 sync: per-stdlib isolated environments for non-ambient stdlib modules.
-  // dart:core and dart:async stay in globalEnvironment (ambient/unconditional);
+  // 显式标准库导入各自缓存导出面；core/async 的隐式预热环境保持共享。
   // dart:math, dart:convert, dart:io etc. each get their own env.
   final Map<String, Environment> _stdlibEnvironments = {};
 
@@ -448,16 +449,17 @@ class ModuleLoader {
     'isolate': IsolateStdlib.register,
   };
 
-  /// Loads a `dart:*` stdlib module into an isolated per-stdlib [Environment].
-  ///
-  /// Returns `null` if the library has bridged content (caller falls through
-  /// to [_tryLoadBridgedModule]) or is truly unsupported (caller throws).
-  /// Returns a [LoadedModule] with the stdlib's isolated env otherwise.
+  /// 为显式标准库导入构造独立导出面；未知桥库返回 null，其余未知库拒绝。
+  /// core/async 仍有隐式预热环境，但显式前缀不能借此访问脚本全局。
   LoadedModule? _loadStdlibModule(Uri uri) {
     final libName = uri.path;
     final uriString = uri.toString();
 
-    final registrar = _stdlibRegistrars[libName];
+    final registrar = switch (libName) {
+      'core' => CoreStdlib.register,
+      'async' => AsyncStdlib.register,
+      _ => _stdlibRegistrars[libName],
+    };
     if (registrar != null) {
       Environment stdlibEnv;
       if (_stdlibEnvironments.containsKey(libName)) {
@@ -479,19 +481,6 @@ class ModuleLoader {
       }
       final emptyAst = _parseSource(uri, '');
       final module = LoadedModule(uri, emptyAst, stdlibEnv, stdlibEnv);
-      _moduleCache[uri] = module;
-      return module;
-    }
-
-    // dart:core / dart:async are ambient — pre-registered into globalEnvironment.
-    if (libName == 'core' || libName == 'async') {
-      final emptyAst = _parseSource(uri, '');
-      final module = LoadedModule(
-        uri,
-        emptyAst,
-        globalEnvironment,
-        globalEnvironment,
-      );
       _moduleCache[uri] = module;
       return module;
     }

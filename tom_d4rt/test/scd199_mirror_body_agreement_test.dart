@@ -324,6 +324,8 @@ const _divergentBodies = <String, Map<String, String>>{
     'InterpreterVisitor._statementsIntroduceBindings': '73f8180e',
     'InterpreterVisitor._subtreeContainsClosure': 'b6e41360',
     'InterpreterVisitor._valueHasType': '716e1f67',
+    // analyzer 的前缀包装 Token，AST 模型直接保存标识符；只钉住该方法的 . name 差异。
+    'InterpreterVisitor._lookupRelationshipType': 'f7ad00b8',
     'InterpreterVisitor.computeCompoundValue': 'aab15c4a',
     'InterpreterVisitor.new': '2cc4e641',
     'InterpreterVisitor.registerTypeAlias': '8b81a27c',

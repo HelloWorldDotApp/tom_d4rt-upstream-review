@@ -1,3 +1,8 @@
+## 2026-10-27（未发布）
+
+- fix: 保留继承、接口和混入声明的导入前缀，隔离过滤导出面的父作用域；显式 core/async 使用独立导出面，拒绝隐藏或缺失名称回退。
+- test: 补充原生同源对照与关系可见性回归。修正 Windows 镜像路径键，精确记录关系查找的 Token 包装差异，不扩大通用归一规则。
+
 ## 1.229.0
 
 ### Fixed — integers are typed `int`, not `double`, on the web (dfin8)
